@@ -17,4 +17,6 @@ cd build
 mv * ../.
 cd ..
 rm -rf build
+git add .
+git commit -m "Deploy app"
 git push origin master
