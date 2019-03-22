@@ -1,5 +1,6 @@
 #!/bin/bash
 
+npm install
 npm run build
 git branch -D master
 git checkout -b master
