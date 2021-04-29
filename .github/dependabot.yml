@@ -1,0 +1,43 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "23:30"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: husky
+    versions:
+    - 5.0.9
+    - 5.1.1
+    - 5.1.3
+    - 5.2.0
+  - dependency-name: "@types/react"
+    versions:
+    - 17.0.1
+    - 17.0.2
+    - 17.0.3
+  - dependency-name: "@types/react-dom"
+    versions:
+    - 17.0.1
+    - 17.0.2
+  - dependency-name: "@size-limit/preset-small-lib"
+    versions:
+    - 4.10.0
+    - 4.10.1
+    - 4.9.2
+  - dependency-name: size-limit
+    versions:
+    - 4.10.0
+    - 4.10.1
+    - 4.9.2
+  - dependency-name: typescript
+    versions:
+    - 4.1.4
+    - 4.1.5
+    - 4.2.2
+    - 4.2.3
+  - dependency-name: react
+    versions:
+    - 16.14.0
