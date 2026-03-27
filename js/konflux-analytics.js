@@ -199,7 +199,7 @@
             flipButtons: false,
           },
           preferencesModal: {
-            layout: "box",
+            layout: "box inline",
             position: "right",
           },
         },
