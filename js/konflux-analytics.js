@@ -1,44 +1,30 @@
 /**
- * Konflux Analytics - Standalone bundle for GitHub Pages
+ * Konflux Analytics - Standalone bundle for GitHub Pages (TEMPLATE)
  *
  * GDPR-compliant cookie consent with Google Consent Mode v2 and Amplitude.
  * Can be used on both Docusaurus and Antora sites.
  *
- * Usage in Antora/HTML:
- *   <script src="/js/konflux-analytics.js"></script>
+ * This is a template file processed by scripts/build-analytics.js at build time.
+ * Environment variables are baked in during build, not configured at runtime.
  *
- * Configuration via window globals (set BEFORE loading this script):
- *   window.KONFLUX_ANALYTICS_CONFIG = {
- *     gaId: 'G-XXXXXXXXXX',           // Optional: GA4 measurement ID
- *     amplitudeKey: 'your-api-key',    // Optional: Amplitude API key
- *     privacyUrl: '/privacy',          // Optional: Privacy policy URL
- *     debug: false                     // Optional: Enable debug logging
- *   };
+ * Build-time placeholders (replaced by build script):
+ *   __GA_MEASUREMENT_ID__     → process.env.GA_MEASUREMENT_ID
+ *   __AMPLITUDE_API_KEY__     → process.env.AMPLITUDE_API_KEY
+ *   __PRIVACY_POLICY_URL__    → process.env.PRIVACY_POLICY_URL
+ *   __DEBUG__                 → (NODE_ENV !== 'production')
  *
- * Or use environment-based defaults (reads from meta tags):
- *   <meta name="ga-measurement-id" content="G-XXXXXXXXXX">
- *   <meta name="amplitude-api-key" content="your-key">
+ * Usage in both sites:
+ *   <script src="/js/konflux-analytics.js" type="module"></script>
  */
 
 (function () {
   "use strict";
 
-  // Configuration
-  const config = window.KONFLUX_ANALYTICS_CONFIG || {};
-  const gaId = config.gaId || getMeta("ga-measurement-id");
-  const amplitudeKey = config.amplitudeKey || getMeta("amplitude-api-key");
-  const privacyUrl =
-    config.privacyUrl ||
-    getMeta("privacy-policy-url") ||
-    "https://www.redhat.com/en/about/privacy-policy";
-  const debug = !!config.debug;
-  const skipCss = !!config.skipCss; // Skip CSS if site already has it bundled
-
-  // Helper: Get meta tag content
-  function getMeta(name) {
-    const meta = document.querySelector(`meta[name="${name}"]`);
-    return meta ? meta.getAttribute("content") : null;
-  }
+  // Configuration (baked in at build time)
+  const gaId = "__GA_MEASUREMENT_ID__";
+  const amplitudeKey = "__AMPLITUDE_API_KEY__";
+  const privacyUrl = "__PRIVACY_POLICY_URL__";
+  const debug = __DEBUG__;
 
   // Debug logging
   function log(msg, data) {
@@ -132,10 +118,8 @@
 
   // Initialize cookie consent
   async function initCookieConsent() {
-    // Only load CSS if not already bundled by the site
-    if (!skipCss) {
-      loadCookieConsentCSS();
-    }
+    // Load vanilla CSS first (PatternFly overrides in Docusaurus, default in Antora)
+    loadCookieConsentCSS();
 
     try {
       // Import vanilla-cookieconsent from CDN
@@ -225,6 +209,49 @@
         const allowed = CookieConsent.acceptedCategory("analytics");
         updateConsent(allowed);
       }, 0);
+
+      // Docusaurus-specific fix: Re-add modal classes on route changes
+      // Docusaurus removes classes from <html> during SPA navigation
+      // Only needed on Docusaurus sites (not Antora)
+      const isDocusaurus = document.getElementById("__docusaurus") !== null;
+
+      if (isDocusaurus) {
+        function syncConsentClasses() {
+          const html = document.documentElement;
+          const ccMain = document.querySelector("#cc-main");
+
+          // Only show the modal if consent hasn't been given yet
+          if (ccMain && !CookieConsent.validConsent()) {
+            if (!html.classList.contains("show--consent")) {
+              html.classList.add("show--consent", "cc--anim");
+            }
+            if (!ccMain.classList.contains("cc--anim")) {
+              ccMain.classList.add("cc--anim");
+            }
+          }
+        }
+
+        // Initial sync after a short delay
+        setTimeout(syncConsentClasses, 150);
+
+        // Watch for class removals (Docusaurus route changes)
+        const observer = new MutationObserver(() => {
+          const ccMain = document.querySelector("#cc-main");
+          if (ccMain && !CookieConsent.validConsent()) {
+            const html = document.documentElement;
+            if (!html.classList.contains("show--consent")) {
+              requestAnimationFrame(syncConsentClasses);
+            }
+          }
+        });
+
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+
+        log("Docusaurus class sync enabled");
+      }
 
       log("Cookie consent initialized");
     } catch (e) {
